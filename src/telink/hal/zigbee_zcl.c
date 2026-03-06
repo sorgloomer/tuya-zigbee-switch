@@ -210,7 +210,7 @@ hal_zigbee_status_t hal_zigbee_send_cmd_to_bindings(const hal_zigbee_cmd *cmd) {
                   ? ZCL_FRAME_CLIENT_SERVER_DIR
                   : ZCL_FRAME_SERVER_CLIENT_DIR,
                 cmd->disable_default_rsp, cmd->manufacturer_code, ZCL_SEQ_NUM,
-                cmd->payload_len, cmd->payload);
+                cmd->payload_len, (uint8_t*)cmd->payload);
 
     return HAL_ZIGBEE_OK;
 }

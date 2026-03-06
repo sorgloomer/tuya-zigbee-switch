@@ -2573,14 +2573,14 @@ REMOTE_HOBEIAN_TS0044:
   tuya_module: none
   mcu_family: Telink
   mcu: TLSR8253F512AT32
-  config_str: bgtzm4ny;TS0044-HOB;BC4u;BD3u;BB5u;BD7u;M;
+  config_str: bgtzm4ny;TS0044-HOB;TC4uC3i;TD3uD4i;TD7uA0i;TB5uB6i;M;
   alt_config_str: null
   old_manufacturer_names: null
   old_zb_models: null
   stock_manufacturer_id: 4417
   stock_image_type: 54179
   firmware_image_type: 43572
-  build: no
+  build: yes
   status: in_progress
   info: Huge battery drain! LEDs on C3, D4, B6, A0
   threads: https://github.com/romasku/tuya-zigbee-switch/issues/237

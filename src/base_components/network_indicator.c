@@ -11,11 +11,7 @@ void network_indicator_from_manual_state(network_indicator_t *indicator) {
     while (*led != NULL && (led - indicator->leds) < 4) {
         (*led)->blink_times_left = 0;
         if (indicator->has_dedicated_led) {
-            if (indicator->manual_state_when_connected) {
-                led_on(*led);
-            } else {
-                led_off(*led);
-            }
+            led_set(*led, indicator->manual_state_when_connected);
         }
         led++;
     }

@@ -4,22 +4,35 @@
 #include "hal/tasks.h"
 #include "hal/timer.h"
 
+#include <stdbool.h>
 #include <stdio.h>
+
+static void _led_set_but_do_not_reset_blink(led_t *led, uint8_t value);
+static void _led_blink_overwrite(led_t *led, uint16_t on_time_ms, uint16_t off_time_ms,
+               uint16_t times);
 
 void led_init(led_t *led) {
     led_off(led);
 }
 
-void led_on(led_t *led) {
-    hal_gpio_write(led->pin, led->on_high);
-    led->on = 1;
+void led_set(led_t *led, uint8_t value) {
+    _led_set_but_do_not_reset_blink(led, value);
     led->blink_times_left = 0;
 }
 
+void led_on(led_t *led) {
+    led_set(led, 1);
+}
+
 void led_off(led_t *led) {
-    hal_gpio_write(led->pin, !led->on_high);
-    led->on = 0;
-    led->blink_times_left = 0;
+    led_set(led, 0);
+}
+
+static void _led_set_but_do_not_reset_blink(led_t *led, uint8_t value) {
+    value = !!value;
+    uint8_t on_high = !!led->on_high;
+    hal_gpio_write(led->pin, on_high == value);
+    led->on = value;
 }
 
 static void led_blink_handler(void *arg) {
@@ -29,15 +42,13 @@ static void led_blink_handler(void *arg) {
         return;
 
     if (led->on) {
-        led->on = 0;
-        hal_gpio_write(led->pin, !led->on_high);
+        _led_set_but_do_not_reset_blink(led, 0);
         if (led->blink_times_left != LED_BLINK_FOREVER) {
             led->blink_times_left--;
         }
         hal_tasks_schedule(&led->blink_task, led->blink_time_off);
     } else {
-        led->on = 1;
-        hal_gpio_write(led->pin, led->on_high);
+        _led_set_but_do_not_reset_blink(led, 1);
         hal_tasks_schedule(&led->blink_task, led->blink_time_on);
     }
 }
@@ -49,8 +60,20 @@ void led_blink(led_t *led, uint16_t on_time_ms, uint16_t off_time_ms,
         return;
     }
 
-    hal_gpio_write(led->pin, led->on_high);
-    led->on                 = 1;
+    _led_blink_overwrite(led, on_time_ms, off_time_ms, times);
+}
+
+void led_blink_overwrite(led_t *led, uint16_t on_time_ms, uint16_t off_time_ms,
+               uint16_t times) {
+    if (led->blink_times_left != 0) {
+        hal_tasks_unschedule(&led->blink_task);
+    }
+    _led_blink_overwrite(led, on_time_ms, off_time_ms, times);
+}
+
+static void _led_blink_overwrite(led_t *led, uint16_t on_time_ms, uint16_t off_time_ms,
+               uint16_t times) {
+    _led_set_but_do_not_reset_blink(led, 1);
     led->blink_time_on      = on_time_ms;
     led->blink_time_off     = off_time_ms;
     led->blink_times_left   = times;

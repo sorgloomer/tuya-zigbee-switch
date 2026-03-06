@@ -5787,6 +5787,26 @@ const definitions = [
     },
     {
         zigbeeModel: [
+            "TS0044-HOB",
+        ],
+        model: "ZG-101ZS",
+        vendor: "Tuya-custom",
+        description: "Custom switch (https://github.com/romasku/tuya-zigbee-switch)",
+        extend: [
+            deviceEndpoints({ endpoints: {} }),
+            romasku.deviceConfig("device_config", ""),
+            romasku.networkIndicator("network_led", ""),
+        ],
+        meta: { multiEndpoint: true },
+        configure: async (device, coordinatorEndpoint, logger) => {
+
+
+
+        },
+        ota: ota.zigbeeOTA,
+    },
+    {
+        zigbeeModel: [
             "TS0044-CUS",
         ],
         model: "_TZ3000_mh9px7cq",

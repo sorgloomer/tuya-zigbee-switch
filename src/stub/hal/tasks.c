@@ -26,7 +26,7 @@ void stub_tasks_poll(void) {
     do {
         tasks_executed = 0;
         for (int i = 0; i < MAX_TASKS; i++) {
-            if (tasks[i].active && current_time >= tasks[i].scheduled_time) {
+            if (tasks[i].active && ((int32_t)(current_time - tasks[i].scheduled_time) >= 0)) {
                 if (tasks[i].task && tasks[i].task->handler) {
                     io_log("TASKS", "Executing task %p from slot %d",
                            (void *)tasks[i].task, i);
