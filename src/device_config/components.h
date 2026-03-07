@@ -30,8 +30,8 @@
 
 extern network_indicator_t network_indicator;
 
-
 extern uint8_t allow_simultaneous_latching_pulses;
+
 
 extern led_t   leds[COMPONENTS_MAX_LED_COUNT];
 extern uint8_t leds_cnt;
@@ -59,12 +59,14 @@ extern zigbee_cover_cluster cover_clusters[COMPONENTS_MAX_COVER_CLUSTER_COUNT];
 extern uint8_t cover_clusters_cnt;
 
 extern hal_zigbee_cluster  clusters[COMPONENTS_MAX_ZIGBEE_CLUSTER_COUNT];
+extern int clusters_cnt;
 extern hal_zigbee_endpoint endpoints[COMPONENTS_MAX_ZIGBEE_ENDPOINT_COUNT];
+extern int endpoints_cnt;
+extern int endpoints_alloc_last_again;
+
 
 extern zigbee_scene_button_cluster scene_button_clusters[COMPONENTS_MAX_SCENE_BUTTON_CLUSTER_COUNT];
 extern uint8_t scene_button_clusters_cnt;
-
-extern uint8_t allow_simultaneous_latching_pulses;
 
 
 #endif

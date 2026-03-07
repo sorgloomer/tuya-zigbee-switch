@@ -45,6 +45,10 @@ static zigbee_scene_button_cluster* scene_button_parse_new(char* entry);
 static led_t* led_parse_new(char* entry);
 static button_t* button_parse_new(char* entry);
 
+static hal_zigbee_endpoint* endpoint_new_or_reuse();
+static void endpoint_new_finalize(hal_zigbee_endpoint* endpoint);
+static void endpoint_new_finalize_and_reuse(hal_zigbee_endpoint* endpoint);
+
 char *seek_until(char *cursor, char needle);
 char *extract_next_entry(char **cursor);
 
@@ -233,73 +237,55 @@ void parse_config() {
 
     periferals_init();
 
-    printf("Initializing Zigbee with %d switches, %d relays, %d cover switches, %d covers\r\n",
-           switch_clusters_cnt, relay_clusters_cnt, cover_switch_clusters_cnt, cover_clusters_cnt);
+    printf(
+        "Initializing Zigbee with %d switches, %d relays, %d cover switches, %d covers, %d scene buttons\r\n",
+        (int)switch_clusters_cnt,
+        (int)relay_clusters_cnt,
+        (int)cover_switch_clusters_cnt,
+        (int)cover_clusters_cnt,
+        (int)scene_button_clusters_cnt
+    );
 
-    uint8_t total_endpoints = switch_clusters_cnt + relay_clusters_cnt +
-                              cover_switch_clusters_cnt + cover_clusters_cnt;
 
-    hal_zigbee_cluster *cluster_ptr = clusters;
-
-    // special case when no switches or relays are defined, so we can init a
-    // "clean" device and configure it while running endpoint 1 still needs to be
-    // initialised even though wenn no switches or relays are defined, so it can
-    // join the network!
-    if (total_endpoints == 0)
-        total_endpoints = 1;
-
-    for (int index = 0; index < total_endpoints; index++) {
-        endpoints[index].endpoint   = index + 1;
-        endpoints[index].profile_id = 0x0104;
-        endpoints[index].device_id  = 0xffff;
+    {
+        hal_zigbee_endpoint* endpoint = endpoint_new_or_reuse();
+        basic_cluster_add_to_endpoint(&basic_cluster, endpoint);
+        hal_ota_cluster_setup(&endpoint->clusters[endpoints->cluster_count++]);
+        endpoint_new_finalize_and_reuse(endpoint);
     }
-
-    endpoints[0].clusters = cluster_ptr;
-    basic_cluster_add_to_endpoint(&basic_cluster, &endpoints[0]);
-
-    hal_ota_cluster_setup(&endpoints[0].clusters[endpoints[0].cluster_count]);
-    endpoints[0].cluster_count++;
 
     for (int index = 0; index < switch_clusters_cnt; index++) {
-        if (index != 0) {
-            cluster_ptr += endpoints[index - 1].cluster_count;
-            endpoints[index].clusters = cluster_ptr;
-        }
-        switch_cluster_add_to_endpoint(&switch_clusters[index], &endpoints[index]);
+        hal_zigbee_endpoint* endpoint = endpoint_new_or_reuse();
+        switch_cluster_add_to_endpoint(&switch_clusters[index], endpoint);
+        endpoint_new_finalize(endpoint);
     }
     for (int index = 0; index < relay_clusters_cnt; index++) {
-        if (switch_clusters_cnt + index != 0) {
-            cluster_ptr += endpoints[switch_clusters_cnt + index - 1].cluster_count;
-            endpoints[switch_clusters_cnt + index].clusters = cluster_ptr;
-        }
-        relay_cluster_add_to_endpoint(&relay_clusters[index],
-                                      &endpoints[switch_clusters_cnt + index]);
+        hal_zigbee_endpoint* endpoint = endpoint_new_or_reuse();
+        relay_cluster_add_to_endpoint(&relay_clusters[index], endpoint);
         // Group cluster is stateless, safe to add to multiple endpoints
-        group_cluster_add_to_endpoint(&group_cluster,
-                                      &endpoints[switch_clusters_cnt + index]);
+        group_cluster_add_to_endpoint(&group_cluster, endpoint);
+        endpoint_new_finalize(endpoint);
     }
 
-    int cover_switch_base = switch_clusters_cnt + relay_clusters_cnt;
     for (int index = 0; index < cover_switch_clusters_cnt; index++) {
-        if (cover_switch_base + index != 0) {
-            cluster_ptr += endpoints[cover_switch_base + index - 1].cluster_count;
-            endpoints[cover_switch_base + index].clusters = cluster_ptr;
-        }
-        cover_switch_cluster_add_to_endpoint(&cover_switch_clusters[index],
-                                             &endpoints[cover_switch_base + index]);
+        hal_zigbee_endpoint* endpoint = endpoint_new_or_reuse();
+        cover_switch_cluster_add_to_endpoint(&cover_switch_clusters[index], endpoint);
+        endpoint_new_finalize(endpoint);
     }
 
-    int cover_base = switch_clusters_cnt + relay_clusters_cnt + cover_switch_clusters_cnt;
     for (int index = 0; index < cover_clusters_cnt; index++) {
-        if (cover_base + index != 0) {
-            cluster_ptr += endpoints[cover_base + index - 1].cluster_count;
-            endpoints[cover_base + index].clusters = cluster_ptr;
-        }
-        cover_cluster_add_to_endpoint(&cover_clusters[index],
-                                      &endpoints[cover_base + index]);
+        hal_zigbee_endpoint* endpoint = endpoint_new_or_reuse();
+        cover_cluster_add_to_endpoint(&cover_clusters[index], endpoint);
+        endpoint_new_finalize(endpoint);
     }
 
-    hal_zigbee_init(endpoints, total_endpoints);
+    for (int index = 0; index < scene_button_clusters_cnt; index++) {
+        hal_zigbee_endpoint* endpoint = endpoint_new_or_reuse();
+        scene_button_cluster_add_to_endpoint(&scene_button_clusters[index], endpoint);
+        endpoint_new_finalize(endpoint);
+    }
+
+    hal_zigbee_init(endpoints, endpoints_cnt);
     while (cursor != (char *)device_config_str.data) {
         cursor--;
         if (*cursor == '\0') {
@@ -309,6 +295,35 @@ void parse_config() {
 
     printf("Config parsed successfully\r\n");
 }
+
+static hal_zigbee_endpoint* endpoint_new_or_reuse() {
+    if (endpoints_alloc_last_again) {
+        endpoints_cnt--;
+        clusters_cnt -= endpoints[endpoints_cnt].cluster_count;
+        endpoints_alloc_last_again = 0;
+    }
+    if (endpoints_cnt >= COMPONENTS_MAX_ZIGBEE_ENDPOINT_COUNT) {
+        return (hal_zigbee_endpoint*)NULL;
+    }
+
+    int endpoint_index = endpoints_cnt + 1;
+    hal_zigbee_endpoint* self = &endpoints[endpoints_cnt++];
+    self->endpoint   = endpoint_index;
+    self->clusters   = clusters + clusters_cnt;
+    self->profile_id = ZCL_HA_PROFILE;
+    self->device_id  = 0xffff;
+    return self;
+}
+
+static void endpoint_new_finalize(hal_zigbee_endpoint* endpoint) {
+    clusters_cnt += endpoint->cluster_count;
+}
+
+static void endpoint_new_finalize_and_reuse(hal_zigbee_endpoint* endpoint) {
+    endpoint_new_finalize(endpoint);
+    endpoints_alloc_last_again = 1;
+}
+
 
 /** parses 3 chars */
 static button_t* button_parse_new(char* entry) {

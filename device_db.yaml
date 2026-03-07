@@ -2573,7 +2573,7 @@ REMOTE_HOBEIAN_TS0044:
   tuya_module: none
   mcu_family: Telink
   mcu: TLSR8253F512AT32
-  config_str: bgtzm4ny;TS0044-HOB;TC4uC3i;TD3uD4i;TD7uA0i;TB5uB6i;M;
+  config_str: bgtzm4ny;TS0044-HOB;TC4uC3i;TD3uD4i;TD7uA0i;TB5uB6i;
   alt_config_str: null
   old_manufacturer_names: null
   old_zb_models: null

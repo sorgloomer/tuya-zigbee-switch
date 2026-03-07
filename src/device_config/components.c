@@ -37,6 +37,9 @@ zigbee_scene_button_cluster scene_button_clusters[COMPONENTS_MAX_SCENE_BUTTON_CL
 uint8_t scene_button_clusters_cnt = 0;
 
 hal_zigbee_cluster  clusters[COMPONENTS_MAX_ZIGBEE_CLUSTER_COUNT];
+int clusters_cnt = 0;
 hal_zigbee_endpoint endpoints[COMPONENTS_MAX_ZIGBEE_ENDPOINT_COUNT];
+int endpoints_cnt = 0;
+int endpoints_alloc_last_again = 0;
 
 uint8_t allow_simultaneous_latching_pulses = 0;

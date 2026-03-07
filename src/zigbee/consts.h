@@ -6,15 +6,16 @@
 
 // Clusters
 
-#define ZCL_CLUSTER_BASIC                     0
-#define ZCL_CLUSTER_ON_OFF                    6
-#define ZCL_CLUSTER_ON_OFF_SWITCH_CONFIG      7
-#define ZCL_CLUSTER_MULTISTATE_INPUT_BASIC    0x0012
-#define ZCL_CLUSTER_LEVEL_CONTROL             0x0008
-#define ZCL_CLUSTER_GROUPS                    0x0004
-#define ZCL_CLUSTER_OTA_BOOTLOAD              0x0019
-#define ZCL_CLUSTER_WINDOW_COVERING           0x0102
-#define ZCL_CLUSTER_COVER_SWITCH_CONFIG       0xFC01
+#define ZCL_CLUSTER_BASIC                      0
+#define ZCL_CLUSTER_ON_OFF                     6
+#define ZCL_CLUSTER_ON_OFF_SWITCH_CONFIG       7
+#define ZCL_CLUSTER_MULTISTATE_INPUT_BASIC     0x0012
+#define ZCL_CLUSTER_LEVEL_CONTROL              0x0008
+#define ZCL_CLUSTER_GROUPS                     0x0004
+#define ZCL_CLUSTER_OTA_BOOTLOAD               0x0019
+#define ZCL_CLUSTER_WINDOW_COVERING            0x0102
+#define ZCL_CLUSTER_COVER_SWITCH_CONFIG        0xFC01
+#define ZCL_CLUSTER_IKEA_TRADFRI_SOMRIG_BUTTON 0xFC80
 
 
 // Attributes
