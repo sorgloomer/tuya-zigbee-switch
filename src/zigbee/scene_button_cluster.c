@@ -11,10 +11,8 @@
 #include "hal/printf_selector.h"
 
 
-static void handle_on_press(void*);
-static void handle_on_long_press(void*);
-static void handle_on_multi_press(void*, uint8_t);
-static void handle_on_release(void*);
+static void handle_on_universal(void*, btn_event_t);
+static void emulate_somrig_actions(zigbee_scene_button_cluster* self);
 
 static zigbee_scene_button_cluster* cluster_by_endpoint[32] = { 0 };
 
@@ -34,14 +32,12 @@ zigbee_scene_button_cluster* scene_button_cluster_new(button_t* button, led_t * 
 
     zigbee_scene_button_cluster* self = &scene_button_clusters[scene_button_clusters_cnt++];
 
+    zigbee_scene_button_cluster_init(self);
     self->button = button;
     self->led = led;
     self->scene_button_index = self - scene_button_clusters;
 
-    button->on_press = (ev_button_callback_t)handle_on_press;
-    button->on_long_press = (ev_button_callback_t)handle_on_long_press;
-    button->on_multi_press = (ev_button_multi_press_callback_t)handle_on_multi_press;
-    button->on_release = (ev_button_callback_t)handle_on_release;
+    button->on_event = handle_on_universal;
     button->callback_param = self;
     return self;
 }
@@ -80,37 +76,82 @@ static void send_event(zigbee_scene_button_cluster* self, uint8_t action_index, 
         (int)cmd.command_id,
         (int)payload
     );
-
-    // self->multistate_state = button_index * 4 + action_index;
-    // hal_zigbee_notify_attribute_changed(
-    //     self->endpoint,
-    //     ZCL_CLUSTER_MULTISTATE_INPUT_BASIC,
-    //     ZCL_ATTR_MULTISTATE_INPUT_PRESENT_VALUE
-    // );
 }
 
-static void handle_on_press(void* context) {
+static void handle_on_universal(void* context, btn_event_t evt) {
     zigbee_scene_button_cluster* self = (zigbee_scene_button_cluster*)context;
-    led_blink_overwrite(self->led, 500, 300, 1);
-    send_event(self, 1, 1);
-}
-
-static void handle_on_release(void* context) {
-    zigbee_scene_button_cluster* self = (zigbee_scene_button_cluster*)context;
-    if (self->led->blink_times_left == 0) {
-        led_blink_overwrite(self->led, 250, 300, 1);
+    if (self->settings.somrig_actions_enabled) {
+        emulate_somrig_actions(self);
     }
-    send_event(self, 2, 1);
 }
 
-static void handle_on_multi_press(void* context, uint8_t press_count) {
-    zigbee_scene_button_cluster* self = (zigbee_scene_button_cluster*)context;
-    led_blink_overwrite(self->led, 300, 300, 3);
-    send_event(self, 3, press_count);
+static void emulate_somrig_actions(zigbee_scene_button_cluster* self) {
+    button_t* btn = self->button;
+
+    uint8_t zb_evt = 0xff;
+    uint8_t led_should_blink = (self->led != NULL) && self->settings.led_enabled;
+    uint8_t long_in_current_state = btn->long_either;
+    uint8_t currently_down = btn->pressed;
+    uint8_t previous_down_was_long = btn->long_pressed;
+
+    if (currently_down && !long_in_current_state) {
+        self->somrig_press_cnt ^= 1;
+    }
+    uint8_t press_count = 2 - (self->somrig_press_cnt & 1);
+
+    if (currently_down && !long_in_current_state && press_count == 1) {
+        if (led_should_blink) {
+            led_blink_overwrite(self->led, 500, 300, 1);
+        }
+        zb_evt = ZIGBEE_SOMRIG_COMMAND_INITIAL_PRESS;
+    }
+    if (currently_down && long_in_current_state && press_count == 1) {
+        if (led_should_blink) {
+            led_blink_overwrite(self->led, 600, 600, 2);
+        }
+        zb_evt = ZIGBEE_SOMRIG_COMMAND_LONG_PRESS;
+    }
+    if (!currently_down && long_in_current_state && press_count == 1 && !previous_down_was_long) {
+        if (led_should_blink && self->led->blink_times_left == 0) {
+            led_blink_overwrite(self->led, 250, 300, 1);
+        }
+        zb_evt = ZIGBEE_SOMRIG_COMMAND_SHORT_RELEASE;
+    }
+    if (!currently_down && !long_in_current_state && press_count == 1 && previous_down_was_long) {
+        zb_evt = ZIGBEE_SOMRIG_COMMAND_LONG_RELEASE;
+    }
+    if (!currently_down && !long_in_current_state && press_count == 2 && !previous_down_was_long) {
+        if (led_should_blink) {
+            led_blink_overwrite(self->led, 300, 300, 3);
+        }
+        zb_evt = ZIGBEE_SOMRIG_COMMAND_DOUBLE_PRESS;
+    }
+
+    if (zb_evt != 0xff) {
+        send_event(self, zb_evt, btn->multi_press_cnt);
+        self->somrig_last_event = zb_evt;
+    }
+
+    if (!currently_down && long_in_current_state) {
+        self->somrig_press_cnt = 0;
+    }
 }
 
-static void handle_on_long_press(void* context) {
-    zigbee_scene_button_cluster* self = (zigbee_scene_button_cluster*)context;
-    led_blink_overwrite(self->led, 600, 600, 2);
-    send_event(self, 4, 1);
+void zigbee_scene_button_cluster_init(zigbee_scene_button_cluster* self) {
+    self->button = (button_t*)NULL;
+    self->endpoint = 0;
+    self->led = (led_t*)NULL;
+    self->scene_button_index = 0;
+    self->somrig_press_cnt = 0;
+    self->somrig_last_event = 0;
+    zigbee_scene_button_cluster_settings_init(&self->settings);
+    
+}
+
+void zigbee_scene_button_cluster_settings_init(zigbee_scene_button_cluster_settings* self) {
+    self->debounce_delay = 50;
+    self->hold_delay = 600;
+    self->led_enabled = 1;
+    self->somrig_actions_enabled = 1;
+    self->multi_press_delay = 600;
 }

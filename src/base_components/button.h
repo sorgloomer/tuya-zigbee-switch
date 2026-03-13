@@ -5,31 +5,49 @@
 #include "hal/tasks.h"
 #include <stdint.h>
 
+#define DEBOUNCE_DELAY_MS    50
+
+typedef enum {
+    BTN_EVENT_EDGE_PRESSED = 0,
+    BTN_EVENT_EDGE_RELEASED = 1,
+    BTN_EVENT_HOLD_PRESSED = 2,
+    BTN_EVENT_HOLD_RELEASED = 3,
+} btn_event_t;
+
 typedef void (*ev_button_callback_t)(void *);
+typedef void (*ev_button_universal_callback_t)(void *, btn_event_t);
 typedef void (*ev_button_multi_press_callback_t)(void *, uint8_t);
 
-#define DEBOUNCE_DELAY_MS    50
 
 typedef struct {
     hal_gpio_pin_t                   pin;
     uint8_t                          pressed_when_high;
     uint8_t                          pressed;
     uint8_t                          long_pressed;
+    uint8_t                          long_released;
+    uint8_t                          long_either;
     uint32_t                         pressed_at_ms;
     uint32_t                         released_at_ms;
     uint16_t                         long_press_duration_ms;
     uint32_t                         multi_press_duration_ms;
     uint8_t                          multi_press_cnt;
-    hal_task_t                       update_task;
-    uint8_t                          debounce_last_state;
+
+    hal_task_t                       timer_debounce;
+    hal_task_t                       timer_hold;
+
+    uint8_t                          debounce_last_level;
     uint32_t                         debounce_last_change;
+
     ev_button_callback_t             on_press;
     ev_button_callback_t             on_long_press;
     ev_button_callback_t             on_release;
     ev_button_multi_press_callback_t on_multi_press;
+    ev_button_universal_callback_t   on_event;
+
     void *                           callback_param;
 } button_t;
 
-void btn_init(button_t *button);
+void btn_init_before(button_t *button);
+void btn_init_afters(button_t *button);
 
 #endif

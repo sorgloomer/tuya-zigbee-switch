@@ -334,6 +334,7 @@ static button_t* button_parse_new(char* entry) {
     hal_gpio_pull_t btn_pull = hal_gpio_parse_pull(entry + 2);
 
     button_t* self = &buttons[buttons_cnt++];
+    btn_init_before(self);
     self->pin = btn_pin;
     hal_gpio_init(btn_pin, 1, btn_pull);
     return self;
@@ -357,11 +358,19 @@ static led_t* led_parse_new(char* entry) {
 }
 
 static zigbee_scene_button_cluster* scene_button_parse_new(char* entry) {
+    int len = strlen(entry);
+    if (len < 4) {
+        return NULL;
+    }
     button_t* button = button_parse_new(entry + 1);
-    if (button == NULL) return (zigbee_scene_button_cluster*)NULL;
+    if (button == NULL) {
+        return (zigbee_scene_button_cluster*)NULL;
+    }
 
     led_t* led = NULL;
-    if (entry[4] != '-') led = led_parse_new(entry + 4);
+    if (len >= 7 && entry[4] != '-') {
+        led = led_parse_new(entry + 4);
+    }
 
     return scene_button_cluster_new(button, led);
 }
@@ -379,7 +388,7 @@ void network_indicator_on_network_status_change(
 
 void periferals_init() {
     for (int index = 0; index < buttons_cnt; index++) {
-        btn_init(&buttons[index]);
+        btn_init_after(&buttons[index]);
     }
     for (int index = 0; index < leds_cnt; index++) {
         led_init(&leds[index]);
