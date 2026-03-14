@@ -25,7 +25,7 @@ typedef struct {
     uint8_t                          pressed;
     uint8_t                          long_pressed;
     uint8_t                          long_released;
-    uint8_t                          long_either;
+    uint8_t                          event_level_held;
     uint32_t                         pressed_at_ms;
     uint32_t                         released_at_ms;
     uint16_t                         long_press_duration_ms;
@@ -48,6 +48,6 @@ typedef struct {
 } button_t;
 
 void btn_init_before(button_t *button);
-void btn_init_afters(button_t *button);
+void btn_init_after(button_t *button);
 
 #endif

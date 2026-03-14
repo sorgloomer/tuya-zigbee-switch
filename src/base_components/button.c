@@ -14,6 +14,8 @@ static void _btn_fire_universal_event(button_t* self,
 
 void btn_init_before(button_t *self) {
     memset(self, sizeof(button_t), 0);
+    self->long_press_duration_ms  = 600;
+    self->multi_press_duration_ms = 600;
 }
 
 void btn_init_after(button_t *button) {
@@ -61,7 +63,7 @@ static void _btn_debounce_callback(void *arg) {
 
     uint8_t previous_long_pressed = button->long_pressed;
     button->pressed               = is_pressed;
-    button->long_either           = 0;
+    button->event_level_held           = 0;
     if (is_pressed) {
         printf("Press detected\r\n");
         button->multi_press_cnt += 1;
@@ -99,7 +101,7 @@ static void _btn_hold_callback(void *arg) {
     button_t *button = (button_t *)arg;
     uint8_t is_pressed = button->debounce_last_level == button->pressed_when_high;
 
-    button->long_either = 1;
+    button->event_level_held = 1;
     if (is_pressed) {
         printf("Long press detected\r\n");
         button->long_pressed = true;

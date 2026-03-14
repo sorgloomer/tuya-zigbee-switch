@@ -18,8 +18,8 @@ typedef struct {
 typedef struct {
     uint8_t     endpoint;
     uint8_t     scene_button_index;
-    uint8_t     somrig_press_cnt;
-    uint8_t     somrig_last_event;
+    uint8_t     somrig_pending;
+    uint8_t     somrig_long;
     button_t *  button;
     led_t *     led;
 
