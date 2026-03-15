@@ -4,6 +4,7 @@
 #include "zigbee/basic_cluster.h"
 #include "zigbee/consts.h"
 #include "zigbee/group_cluster.h"
+#include "zigbee/identify_cluster.h"
 #include "zigbee/relay_cluster.h"
 #include "zigbee/switch_cluster.h"
 #include "zigbee/cover_switch_cluster.h"
@@ -250,6 +251,7 @@ void parse_config() {
     {
         hal_zigbee_endpoint* endpoint = endpoint_new_or_reuse();
         basic_cluster_add_to_endpoint(&basic_cluster, endpoint);
+        identify_cluster_add_to_endpoint(endpoint);
         hal_ota_cluster_setup(&endpoint->clusters[endpoints->cluster_count++]);
         endpoint_new_finalize_and_reuse(endpoint);
     }

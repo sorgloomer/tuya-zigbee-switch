@@ -19,7 +19,7 @@ const uint8_t appVersion   = 0x03;
 const uint8_t stackVersion = 0x02;
 const uint8_t hwVersion    = 0x00;
 
-const uint8_t powerSource = 0x01; // POWER_SOURCE_MAINS_1_PHASE
+uint8_t powerSource = POWER_SOURCE_MAINS_1_PHASE;
 
 const uint16_t cluster_revision = 0x01;
 DEF_STR(STRINGIFY_VALUE(VERSION_STR), swBuildId);
@@ -116,4 +116,8 @@ void basic_cluster_load_attrs_from_nv() {
     }
     network_indicator.manual_state_when_connected =
         nv_config_buffer.network_led_on;
+}
+
+void basic_cluster_set_power_source(uint8_t power_source_id) {
+    powerSource = power_source_id;
 }

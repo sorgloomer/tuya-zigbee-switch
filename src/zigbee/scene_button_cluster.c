@@ -45,11 +45,12 @@ void scene_button_cluster_add_to_endpoint(zigbee_scene_button_cluster* cluster, 
     cluster_by_endpoint[cluster->endpoint] = cluster;
 
     // Output
-    endpoint->clusters[endpoint->cluster_count].cluster_id      = ZCL_CLUSTER_IKEA_TRADFRI_SOMRIG_BUTTON;
-    endpoint->clusters[endpoint->cluster_count].attribute_count = 0;
-    endpoint->clusters[endpoint->cluster_count].attributes      = (hal_zigbee_attribute*)NULL;
-    endpoint->clusters[endpoint->cluster_count].is_server       = 0;
-    endpoint->cluster_count++;
+    hal_zigbee_cluster* hal_cluster = &endpoint->clusters[endpoint->cluster_count++];
+    hal_cluster->cluster_id      = ZCL_CLUSTER_IKEA_TRADFRI_SOMRIG_BUTTON;
+    hal_cluster->attribute_count = 0;
+    hal_cluster->attributes      = (hal_zigbee_attribute*)NULL;
+    hal_cluster->is_server       = 0;
+    hal_cluster->cmd_callback    = (hal_zigbee_cmd_callback_t)NULL;
 }
 
 static inline void _send_event(
