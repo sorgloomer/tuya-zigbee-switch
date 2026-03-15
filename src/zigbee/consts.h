@@ -6,14 +6,17 @@
 
 // Clusters
 
-#define ZCL_CLUSTER_BASIC                     0
-#define ZCL_CLUSTER_ON_OFF                    6
-#define ZCL_CLUSTER_ON_OFF_SWITCH_CONFIG      7
-#define ZCL_CLUSTER_MULTISTATE_INPUT_BASIC    0x0012
-#define ZCL_CLUSTER_LEVEL_CONTROL             0x0008
-#define ZCL_CLUSTER_GROUPS                    0x0004
-#define ZCL_CLUSTER_OTA_BOOTLOAD              0x0019
-#define ZCL_CLUSTER_WINDOW_COVERING           0x0102
+#define ZCL_CLUSTER_BASIC                      0x0000
+#define ZCL_CLUSTER_IDENTIFY                   0x0003
+#define ZCL_CLUSTER_GROUPS                     0x0004
+#define ZCL_CLUSTER_ON_OFF                     0x0006
+#define ZCL_CLUSTER_ON_OFF_SWITCH_CONFIG       0x0007
+#define ZCL_CLUSTER_LEVEL_CONTROL              0x0008
+#define ZCL_CLUSTER_MULTISTATE_INPUT_BASIC     0x0012
+#define ZCL_CLUSTER_OTA_BOOTLOAD               0x0019
+#define ZCL_CLUSTER_WINDOW_COVERING            0x0102
+#define ZCL_CLUSTER_COVER_SWITCH_CONFIG        0xFC01
+#define ZCL_CLUSTER_IKEA_TRADFRI_SOMRIG_BUTTON 0xFC80
 
 
 // Attributes
@@ -41,6 +44,10 @@
 
 #define ZCL_ATTR_BASIC_DEVICE_CONFIG        0xff00
 #define ZCL_ATTR_BASIC_STATUS_LED_STATE     0xff01
+
+// Identify Cluster
+
+#define ZCL_ATTR_IDENTIFY_IDENTIFY_TIME     0x0000
 
 // OnOff cluster
 
@@ -80,6 +87,14 @@
 #define ZCL_ATTR_WINDOW_COVERING_MOVING                              0xff00
 #define ZCL_ATTR_WINDOW_COVERING_MOTOR_REVERSAL                      0xff01
 
+// Cover Switch Configuration cluster
+#define ZCL_ATTR_COVER_SWITCH_CONFIG_SWITCH_TYPE                     0x0000
+#define ZCL_ATTR_COVER_SWITCH_CONFIG_COVER_INDEX                     0x0001
+#define ZCL_ATTR_COVER_SWITCH_CONFIG_REVERSAL                        0x0002
+#define ZCL_ATTR_COVER_SWITCH_CONFIG_LOCAL_MODE                      0x0003
+#define ZCL_ATTR_COVER_SWITCH_CONFIG_BINDED_MODE                     0x0004
+#define ZCL_ATTR_COVER_SWITCH_CONFIG_LONG_PRESS_DUR                  0x0005
+
 // OTA cluster
 
 #define ZCL_ATTR_OTA_UPGRADE_SERVER_ID                  0x0000
@@ -95,6 +110,16 @@
 #define ZCL_ATTR_OTA_IMAGE_STAMP                        0x000A
 
 // Attr values
+
+// Identify Cluster
+
+#define ZCL_IDENTIFY_EFFECT_ID_BLINK                             0x00
+#define ZCL_IDENTIFY_EFFECT_ID_BREATHE                           0x01
+#define ZCL_IDENTIFY_EFFECT_ID_OKAY                              0x02
+#define ZCL_IDENTIFY_EFFECT_ID_CHANNEL_CHANGE                    0x0b
+#define ZCL_IDENTIFY_EFFECT_ID_FINISH_EFFECT                     0xfe
+#define ZCL_IDENTIFY_EFFECT_ID_STOP_EFFECT                       0xff
+#define ZCL_IDENTIFY_EFFECT_VARIANT_DEFAULT                      0x00
 
 // OnOff cluster
 
@@ -128,7 +153,6 @@
 #define ZCL_ONOFF_CONFIGURATION_BINDED_MODE_LONG                       0x02
 #define ZCL_ONOFF_CONFIGURATION_BINDED_MODE_SHORT                      0x03
 
-
 // Level cluster
 
 #define ZCL_LEVEL_MOVE_UP      0x00
@@ -140,7 +164,24 @@
 #define ZCL_ATTR_WINDOW_COVERING_MOVING_OPENING    0x01
 #define ZCL_ATTR_WINDOW_COVERING_MOVING_CLOSING    0x02
 
+// Cover Switch Configuration cluster
+
+#define ZCL_COVER_SWITCH_TYPE_TOGGLE         0x00
+#define ZCL_COVER_SWITCH_TYPE_MOMENTARY      0x01
+
+#define ZCL_COVER_SWITCH_MODE_IMMEDIATE      0x00
+#define ZCL_COVER_SWITCH_MODE_SHORT_PRESS    0x01
+#define ZCL_COVER_SWITCH_MODE_LONG_PRESS     0x02
+#define ZCL_COVER_SWITCH_MODE_HYBRID         0x03
+
 // Commands
+
+// Identify Cluster
+
+#define ZCL_CMD_IDENTIFY_IDENTIFY                   0x00
+#define ZCL_CMD_IDENTIFY_IDENTIFY_QUERY             0x01
+#define ZCL_CMD_IDENTIFY_TRIGGER_EFFECT             0x40
+#define ZCL_CMD_IDENTIFY_IDENTIFY_QUERY_RESPONSE    0x00
 
 // OnOff Cluster
 

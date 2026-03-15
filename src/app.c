@@ -2,6 +2,7 @@
 #include "device_config/device_type.h"
 #include "device_config/nvm_items.h"
 #include "device_config/reset.h"
+#include "functions/lightshow.h"
 #include "hal/nvm.h"
 #include "hal/printf_selector.h"
 #include "hal/system.h"
@@ -41,8 +42,8 @@ void process_device_type_change() {
 
 void app_init(void) {
     handle_version_changes();
-    parse_config(); // Does most of the setup, including all callbacks
-                    // registration
+    parse_config(); // Does most of the setup, including all callbacks registration
+    lightshow_start(1000);
     hal_zigbee_init_ota();
     init_global_attr_write_callback();
 

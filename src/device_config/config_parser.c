@@ -4,9 +4,12 @@
 #include "zigbee/basic_cluster.h"
 #include "zigbee/consts.h"
 #include "zigbee/group_cluster.h"
+#include "zigbee/identify_cluster.h"
 #include "zigbee/relay_cluster.h"
 #include "zigbee/switch_cluster.h"
+#include "zigbee/cover_switch_cluster.h"
 #include "zigbee/cover_cluster.h"
+#include "zigbee/scene_button_cluster.h"
 
 #include <stdint.h>
 #include <string.h>
@@ -15,56 +18,49 @@
 #include "base_components/network_indicator.h"
 #include "config_nv.h"
 #include "device_config/reset.h"
+#include "device_config/components.h"
 #include "hal/system.h"
 #include "hal/zigbee.h"
 #include "hal/zigbee_ota.h"
+
+#define MULTI_PRESS_CNT_TO_RESET    10
+
+#define SETTING_B_BUTTON 'B'
+#define SETTING_C_COVER 'C'
+#define SETTING_I_INDICATOR 'I'
+#define SETTING_L_LED 'L'
+#define SETTING_M_SWITCH_MOMENTARY 'M'
+#define SETTING_R_RELAY 'R'
+#define SETTING_S_SWITCH 'S'
+#define SETTING_T_SCENE_BUTTON 'T'
+#define SETTING_X_SWITCH_COVER 'X'
+#define SETTING_IMAGE 'i'
 
 // Forward declarations
 void periferals_init(void);
 
 // extern ota_preamble_t baseEndpoint_otaInfo;
 
-network_indicator_t network_indicator = {
-    .leds                        = { NULL, NULL, NULL, NULL },
-    .has_dedicated_led           = 0,
-    .manual_state_when_connected = 1,
-};
-
-led_t   leds[5];
-uint8_t leds_cnt = 0;
-
-button_t buttons[5];
-uint8_t  buttons_cnt = 0;
-
-relay_t relays[10]; // 4 relay endpoints + 3 cover endpoints
-uint8_t relays_cnt = 0;
-
-zigbee_basic_cluster basic_cluster = {
-    .deviceEnable = 1,
-};
-
-zigbee_group_cluster group_cluster = {};
-
-zigbee_switch_cluster switch_clusters[4];
-uint8_t switch_clusters_cnt = 0;
-
-zigbee_relay_cluster relay_clusters[4];
-uint8_t relay_clusters_cnt = 0;
-
-zigbee_cover_cluster cover_clusters[3];
-uint8_t cover_clusters_cnt = 0;
-
-hal_zigbee_cluster  clusters[32];
-hal_zigbee_endpoint endpoints[10];
-
-uint8_t allow_simultaneous_latching_pulses = 0;
-
 uint32_t parse_int(const char *s);
+static zigbee_scene_button_cluster* scene_button_parse_new(char* entry);
+static led_t* led_parse_new(char* entry);
+static button_t* button_parse_new(char* entry);
+
+static hal_zigbee_endpoint* endpoint_new_or_reuse();
+static void endpoint_new_finalize(hal_zigbee_endpoint* endpoint);
+static void endpoint_new_finalize_and_reuse(hal_zigbee_endpoint* endpoint);
+
 char *seek_until(char *cursor, char needle);
 char *extract_next_entry(char **cursor);
 
 void on_reset_clicked(void *_) {
     hal_factory_reset();
+}
+
+void on_multi_press_reset(void *_, uint8_t press_count) {
+    if (press_count >= MULTI_PRESS_CNT_TO_RESET) {
+        hal_factory_reset();
+    }
 }
 
 void parse_config() {
@@ -93,10 +89,10 @@ void parse_config() {
     char *entry;
     for (entry = extract_next_entry(&cursor); *entry != '\0';
          entry = extract_next_entry(&cursor)) {
-        if (entry[0] == 'S' && entry[1] == 'L' && entry[2] == 'P') {
+        if (entry[0] == SETTING_S_SWITCH && entry[1] == 'L' && entry[2] == 'P') {
             // Simultaneous Latching Pulses == SLP
             allow_simultaneous_latching_pulses = 1;
-        } else if (entry[0] == 'B') {
+        } else if (entry[0] == SETTING_B_BUTTON) {
             hal_gpio_pin_t  pin  = hal_gpio_parse_pin(entry + 1);
             hal_gpio_pull_t pull = hal_gpio_parse_pull(entry + 3);
             hal_gpio_init(pin, 1, pull);
@@ -106,21 +102,15 @@ void parse_config() {
             buttons[buttons_cnt].multi_press_duration_ms = 800;
             buttons[buttons_cnt].on_long_press           = on_reset_clicked;
             buttons_cnt++;
-        } else if (entry[0] == 'L') {
-            hal_gpio_pin_t pin = hal_gpio_parse_pin(entry + 1);
-            hal_gpio_init(pin, 0, HAL_GPIO_PULL_NONE);
-            leds[leds_cnt].pin     = pin;
-            leds[leds_cnt].on_high = entry[3] != 'i';
+        } else if (entry[0] == SETTING_L_LED) {
+            led_t* led = led_parse_new(entry + 1);
 
-            led_init(&leds[leds_cnt]);
-
-            network_indicator.leds[0]           = &leds[leds_cnt];
+            network_indicator.leds[0]           = led;
             network_indicator.leds[1]           = NULL;
             network_indicator.has_dedicated_led = true;
-
+            
             has_dedicated_status_led = true;
-            leds_cnt++;
-        } else if (entry[0] == 'I') {
+        } else if (entry[0] == SETTING_I_INDICATOR) {
             hal_gpio_pin_t pin = hal_gpio_parse_pin(entry + 1);
             hal_gpio_init(pin, 0, HAL_GPIO_PULL_NONE);
             leds[leds_cnt].pin     = pin;
@@ -143,7 +133,7 @@ void parse_config() {
                 }
             }
             leds_cnt++;
-        } else if (entry[0] == 'S') {
+        } else if (entry[0] == SETTING_S_SWITCH) {
             hal_gpio_pin_t  pin  = hal_gpio_parse_pin(entry + 1);
             hal_gpio_pull_t pull = hal_gpio_parse_pull(entry + 3);
             hal_gpio_init(pin, 1, pull);
@@ -151,6 +141,7 @@ void parse_config() {
             buttons[buttons_cnt].pin = pin;
             buttons[buttons_cnt].long_press_duration_ms  = 800;
             buttons[buttons_cnt].multi_press_duration_ms = 800;
+            buttons[buttons_cnt].on_multi_press          = on_multi_press_reset;
 
             switch_clusters[switch_clusters_cnt].switch_idx = switch_clusters_cnt;
             switch_clusters[switch_clusters_cnt].mode       =
@@ -167,7 +158,9 @@ void parse_config() {
             switch_clusters[switch_clusters_cnt].level_move_rate = 50;
             buttons_cnt++;
             switch_clusters_cnt++;
-        } else if (entry[0] == 'R') {
+        } else if (entry[0] == SETTING_T_SCENE_BUTTON) {
+            scene_button_parse_new(entry);
+        } else if (entry[0] == SETTING_R_RELAY) {
             hal_gpio_pin_t pin = hal_gpio_parse_pin(entry + 1);
             hal_gpio_init(pin, 0, HAL_GPIO_PULL_NONE);
 
@@ -186,7 +179,32 @@ void parse_config() {
 
             relays_cnt++;
             relay_clusters_cnt++;
-        } else if (entry[0] == 'C') {
+        } else if (entry[0] == SETTING_X_SWITCH_COVER) {
+            hal_gpio_pin_t  open_pin  = hal_gpio_parse_pin(entry + 1);
+            hal_gpio_pin_t  close_pin = hal_gpio_parse_pin(entry + 3);
+            hal_gpio_pull_t pull      = hal_gpio_parse_pull(entry + 5);
+
+            hal_gpio_init(open_pin, 1, pull);
+            hal_gpio_init(close_pin, 1, pull);
+
+            buttons[buttons_cnt].pin = open_pin;
+            buttons[buttons_cnt].long_press_duration_ms  = 800;
+            buttons[buttons_cnt].multi_press_duration_ms = 800;
+            buttons[buttons_cnt].on_multi_press          = on_multi_press_reset;
+            button_t *open_button = &buttons[buttons_cnt++];
+
+            buttons[buttons_cnt].pin = close_pin;
+            buttons[buttons_cnt].long_press_duration_ms  = 800;
+            buttons[buttons_cnt].multi_press_duration_ms = 800;
+            buttons[buttons_cnt].on_multi_press          = on_multi_press_reset;
+            button_t *close_button = &buttons[buttons_cnt++];
+
+            cover_switch_clusters[cover_switch_clusters_cnt].open_button      = open_button;
+            cover_switch_clusters[cover_switch_clusters_cnt].close_button     = close_button;
+            cover_switch_clusters[cover_switch_clusters_cnt].cover_switch_idx =
+                cover_switch_clusters_cnt;
+            cover_switch_clusters_cnt++;
+        } else if (entry[0] == SETTING_C_COVER) {
             hal_gpio_pin_t open_pin  = hal_gpio_parse_pin(entry + 1);
             hal_gpio_pin_t close_pin = hal_gpio_parse_pin(entry + 3);
 
@@ -207,10 +225,10 @@ void parse_config() {
             cover_clusters[cover_clusters_cnt].close_relay = close_relay;
             cover_clusters[cover_clusters_cnt].cover_idx   = cover_clusters_cnt;
             cover_clusters_cnt++;
-        } else if (entry[0] == 'i') {
+        } else if (entry[0] == SETTING_IMAGE) {
             uint32_t image_type = parse_int(entry + 1);
             hal_zigbee_set_image_type(image_type);
-        } else if (entry[0] == 'M') {
+        } else if (entry[0] == SETTING_M_SWITCH_MOMENTARY) {
             for (int index = 0; index < switch_clusters_cnt; index++) {
                 switch_clusters[index].mode =
                     ZCL_ONOFF_CONFIGURATION_SWITCH_TYPE_MOMENTARY;
@@ -220,57 +238,56 @@ void parse_config() {
 
     periferals_init();
 
-    printf("Initializing Zigbee with %d switches, %d relays, %d covers\r\n",
-           switch_clusters_cnt, relay_clusters_cnt, cover_clusters_cnt);
+    printf(
+        "Initializing Zigbee with %d switches, %d relays, %d cover switches, %d covers, %d scene buttons\r\n",
+        (int)switch_clusters_cnt,
+        (int)relay_clusters_cnt,
+        (int)cover_switch_clusters_cnt,
+        (int)cover_clusters_cnt,
+        (int)scene_button_clusters_cnt
+    );
 
-    uint8_t total_endpoints = switch_clusters_cnt + relay_clusters_cnt + cover_clusters_cnt;
 
-    hal_zigbee_cluster *cluster_ptr = clusters;
-
-    // special case when no switches or relays are defined, so we can init a
-    // "clean" device and configure it while running endpoint 1 still needs to be
-    // initialised even though wenn no switches or relays are defined, so it can
-    // join the network!
-    if (total_endpoints == 0)
-        total_endpoints = 1;
-
-    for (int index = 0; index < total_endpoints; index++) {
-        endpoints[index].endpoint   = index + 1;
-        endpoints[index].profile_id = 0x0104;
-        endpoints[index].device_id  = 0xffff;
+    {
+        hal_zigbee_endpoint* endpoint = endpoint_new_or_reuse();
+        basic_cluster_add_to_endpoint(&basic_cluster, endpoint);
+        identify_cluster_add_to_endpoint(endpoint);
+        hal_ota_cluster_setup(&endpoint->clusters[endpoints->cluster_count++]);
+        endpoint_new_finalize_and_reuse(endpoint);
     }
-
-    endpoints[0].clusters = cluster_ptr;
-    basic_cluster_add_to_endpoint(&basic_cluster, &endpoints[0]);
-
-    hal_ota_cluster_setup(&endpoints[0].clusters[endpoints[0].cluster_count]);
-    endpoints[0].cluster_count++;
 
     for (int index = 0; index < switch_clusters_cnt; index++) {
-        if (index != 0) {
-            cluster_ptr += endpoints[index - 1].cluster_count;
-            endpoints[index].clusters = cluster_ptr;
-        }
-        switch_cluster_add_to_endpoint(&switch_clusters[index], &endpoints[index]);
+        hal_zigbee_endpoint* endpoint = endpoint_new_or_reuse();
+        switch_cluster_add_to_endpoint(&switch_clusters[index], endpoint);
+        endpoint_new_finalize(endpoint);
     }
     for (int index = 0; index < relay_clusters_cnt; index++) {
-        cluster_ptr += endpoints[switch_clusters_cnt + index - 1].cluster_count;
-        endpoints[switch_clusters_cnt + index].clusters = cluster_ptr;
-        relay_cluster_add_to_endpoint(&relay_clusters[index],
-                                      &endpoints[switch_clusters_cnt + index]);
+        hal_zigbee_endpoint* endpoint = endpoint_new_or_reuse();
+        relay_cluster_add_to_endpoint(&relay_clusters[index], endpoint);
         // Group cluster is stateless, safe to add to multiple endpoints
-        group_cluster_add_to_endpoint(&group_cluster,
-                                      &endpoints[switch_clusters_cnt + index]);
-    }
-    int cover_base = switch_clusters_cnt + relay_clusters_cnt;
-    for (int index = 0; index < cover_clusters_cnt; index++) {
-        cluster_ptr += endpoints[cover_base + index - 1].cluster_count;
-        endpoints[cover_base + index].clusters = cluster_ptr;
-        cover_cluster_add_to_endpoint(&cover_clusters[index],
-                                      &endpoints[cover_base + index]);
+        group_cluster_add_to_endpoint(&group_cluster, endpoint);
+        endpoint_new_finalize(endpoint);
     }
 
-    hal_zigbee_init(endpoints, total_endpoints);
+    for (int index = 0; index < cover_switch_clusters_cnt; index++) {
+        hal_zigbee_endpoint* endpoint = endpoint_new_or_reuse();
+        cover_switch_cluster_add_to_endpoint(&cover_switch_clusters[index], endpoint);
+        endpoint_new_finalize(endpoint);
+    }
+
+    for (int index = 0; index < cover_clusters_cnt; index++) {
+        hal_zigbee_endpoint* endpoint = endpoint_new_or_reuse();
+        cover_cluster_add_to_endpoint(&cover_clusters[index], endpoint);
+        endpoint_new_finalize(endpoint);
+    }
+
+    for (int index = 0; index < scene_button_clusters_cnt; index++) {
+        hal_zigbee_endpoint* endpoint = endpoint_new_or_reuse();
+        scene_button_cluster_add_to_endpoint(&scene_button_clusters[index], endpoint);
+        endpoint_new_finalize(endpoint);
+    }
+
+    hal_zigbee_init(endpoints, endpoints_cnt);
     while (cursor != (char *)device_config_str.data) {
         cursor--;
         if (*cursor == '\0') {
@@ -279,6 +296,85 @@ void parse_config() {
     }
 
     printf("Config parsed successfully\r\n");
+}
+
+static hal_zigbee_endpoint* endpoint_new_or_reuse() {
+    if (endpoints_alloc_last_again) {
+        endpoints_cnt--;
+        clusters_cnt -= endpoints[endpoints_cnt].cluster_count;
+        endpoints_alloc_last_again = 0;
+    }
+    if (endpoints_cnt >= COMPONENTS_MAX_ZIGBEE_ENDPOINT_COUNT) {
+        return (hal_zigbee_endpoint*)NULL;
+    }
+
+    int endpoint_index = endpoints_cnt + 1;
+    hal_zigbee_endpoint* self = &endpoints[endpoints_cnt++];
+    self->endpoint   = endpoint_index;
+    self->clusters   = clusters + clusters_cnt;
+    self->profile_id = ZCL_HA_PROFILE;
+    self->device_id  = 0xffff;
+    return self;
+}
+
+static void endpoint_new_finalize(hal_zigbee_endpoint* endpoint) {
+    clusters_cnt += endpoint->cluster_count;
+}
+
+static void endpoint_new_finalize_and_reuse(hal_zigbee_endpoint* endpoint) {
+    endpoint_new_finalize(endpoint);
+    endpoints_alloc_last_again = 1;
+}
+
+
+/** parses 3 chars */
+static button_t* button_parse_new(char* entry) {
+    if (buttons_cnt >= COMPONENTS_MAX_BUTTON_COUNT) {
+        return (button_t*)NULL;
+    }
+    hal_gpio_pin_t  btn_pin  = hal_gpio_parse_pin(entry + 0);
+    hal_gpio_pull_t btn_pull = hal_gpio_parse_pull(entry + 2);
+
+    button_t* self = &buttons[buttons_cnt++];
+    btn_init_before(self);
+    self->pin = btn_pin;
+    hal_gpio_init(btn_pin, 1, btn_pull);
+    return self;
+}
+
+/** parses 3 chars */
+static led_t* led_parse_new(char* entry) {
+    if (leds_cnt >= COMPONENTS_MAX_LED_COUNT) {
+        return (led_t*)NULL;
+    }
+    hal_gpio_pin_t led_pin  = hal_gpio_parse_pin(entry);
+    char led_mode  = entry[2];
+
+    led_t* self = &leds[leds_cnt++];
+    self->pin = led_pin;
+    self->on_high = led_mode != 'i';
+    hal_gpio_init(led_pin, 0, HAL_GPIO_PULL_NONE);
+    led_init(self);
+
+    return self;
+}
+
+static zigbee_scene_button_cluster* scene_button_parse_new(char* entry) {
+    int len = strlen(entry);
+    if (len < 4) {
+        return NULL;
+    }
+    button_t* button = button_parse_new(entry + 1);
+    if (button == NULL) {
+        return (zigbee_scene_button_cluster*)NULL;
+    }
+
+    led_t* led = NULL;
+    if (len >= 7 && entry[4] != '-') {
+        led = led_parse_new(entry + 4);
+    }
+
+    return scene_button_cluster_new(button, led);
 }
 
 void network_indicator_on_network_status_change(
@@ -294,7 +390,7 @@ void network_indicator_on_network_status_change(
 
 void periferals_init() {
     for (int index = 0; index < buttons_cnt; index++) {
-        btn_init(&buttons[index]);
+        btn_init_after(&buttons[index]);
     }
     for (int index = 0; index < leds_cnt; index++) {
         led_init(&leds[index]);

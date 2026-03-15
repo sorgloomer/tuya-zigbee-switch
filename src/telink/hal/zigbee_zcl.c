@@ -4,6 +4,7 @@
 #include "zcl_include.h"
 #include "zcl_multistate_input.h"
 #include "zcl_onoff_configuration.h"
+#include "zcl_cover_switch_config.h"
 #pragma pack(pop)
 
 #include "telink_size_t_hack.h"
@@ -50,6 +51,9 @@ static cluster_registerFunc_t get_register_func_by_cluster_id(u16 cluster_id) {
     if (cluster_id == ZCL_CLUSTER_CLOSURES_WINDOW_COVERING) { // Window Covering
         return zcl_windowCovering_register;
     }
+    if (cluster_id == 0xFC01) { // Cover Switch Config
+        return zcl_cover_switch_config_register;
+    }
     return NULL;
 }
 
@@ -64,6 +68,12 @@ static status_t cmd_callback(u8 endpoint, u16 clusterId, u8 cmdId,
     return(ZCL_STA_SUCCESS);
 }
 
+static status_t cmd_callback_identify(zclIncomingAddrInfo_t *pAddrInfo, u8 cmdId,
+                                    void *cmdPayload) {
+    return cmd_callback(pAddrInfo->dstEp, ZCL_CLUSTER_GEN_IDENTIFY, cmdId,
+                        cmdPayload);
+}
+
 static status_t cmd_callback_on_off(zclIncomingAddrInfo_t *pAddrInfo, u8 cmdId,
                                     void *cmdPayload) {
     return cmd_callback(pAddrInfo->dstEp, ZCL_CLUSTER_GEN_ON_OFF, cmdId,
@@ -76,7 +86,19 @@ static status_t cmd_callback_window_covering(zclIncomingAddrInfo_t *pAddrInfo, u
                         cmdPayload);
 }
 
+static status_t cmd_callback_level_control(zclIncomingAddrInfo_t *pAddrInfo, u8 cmdId,
+                                           void *cmdPayload) {
+    return cmd_callback(pAddrInfo->dstEp, ZCL_CLUSTER_GEN_LEVEL_CONTROL, cmdId,
+                        cmdPayload);
+}
+
 static cluster_forAppCb_t get_cmd_callback_by_cluster_id(u16 cluster_id) {
+    if (cluster_id == ZCL_CLUSTER_GEN_IDENTIFY) {
+        return cmd_callback_identify;
+    }
+    if (cluster_id == ZCL_CLUSTER_GEN_LEVEL_CONTROL) { // Level Control cluster
+        return cmd_callback_level_control;
+    }
     if (cluster_id == ZCL_CLUSTER_GEN_ON_OFF) { // On/Off cluster
         return cmd_callback_on_off;
     }
@@ -197,7 +219,7 @@ hal_zigbee_status_t hal_zigbee_send_cmd_to_bindings(const hal_zigbee_cmd *cmd) {
                   ? ZCL_FRAME_CLIENT_SERVER_DIR
                   : ZCL_FRAME_SERVER_CLIENT_DIR,
                 cmd->disable_default_rsp, cmd->manufacturer_code, ZCL_SEQ_NUM,
-                cmd->payload_len, cmd->payload);
+                cmd->payload_len, (uint8_t*)cmd->payload);
 
     return HAL_ZIGBEE_OK;
 }

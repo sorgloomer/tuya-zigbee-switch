@@ -70,9 +70,9 @@ int real_main(startup_state_e state) {
         if (!tl_stackBusy() && zb_isTaskDone()) {
             telink_gpio_hal_setup_wake_ups();
             ev_timer_event_t *timerEvt = ev_timer_nearestGet();
-            u32 sleepDuration          = 1000;
-            if (timerEvt) {
-                sleepDuration = timerEvt->timeout < 1000 ? timerEvt->timeout : 1000;
+            u32 sleepDuration          = 300000;
+            if (timerEvt && timerEvt->timeout < sleepDuration) {
+                sleepDuration = timerEvt->timeout;
             }
             drv_pm_sleep(PM_SLEEP_MODE_SUSPEND,
                          PM_WAKEUP_SRC_PAD | PM_WAKEUP_SRC_TIMER, sleepDuration);

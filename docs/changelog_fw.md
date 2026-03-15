@@ -8,7 +8,13 @@ Please describe what you are working on:
 
 ### Features
 
-- Control cover motors (WIP)
+- **Cover cluster** (window covering) for controlling the motor of curtains, blinds, and shutters.  
+  Supports open, close, and stop commands with motor safety delays.
+- **Cover switch cluster** for handling user input from window covering switches.  
+  Supports toggle/momentary switches, stop-on-repeat, stop button, local control, and remote device binding.
+- Relays now respond to *MoveToLevelWithOnOff*
+  - Level = 0 -> Turn off relay
+  - Level > 0 -> Turn on  relay
 
 ### Changes
 
@@ -78,6 +84,11 @@ Please describe what you are working on:
   - Option 'Relay indicator - manual on' is not kept after reboot
   - Relay indicators sometimes go out-of-sync ([#38](https://github.com/romasku/tuya-zigbee-switch/issues/38))
   - Telink End_device unreachable from Z2M after a while ([#217](https://github.com/romasku/tuya-zigbee-switch/issues/217))
+  - Switch randomly toggles on TLSR8253 512KB devices ([#289](https://github.com/romasku/tuya-zigbee-switch/issues/289))
+  (HOBEIAN and Zbeacon)
+  - *Power-on behavior* doesn't fully work on some devices
+  - *momentary_nc* not working after power loss.  
+  (Apply the setting again)
 
 ## v1.0.21
 

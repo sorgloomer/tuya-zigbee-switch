@@ -36,6 +36,13 @@ void led_on(led_t *led);
  */
 void led_off(led_t *led);
 
+/**
+ * @brief      Set led state, canceling any blinking
+ * @param	   *led - Led to use
+ * @return     none
+ */
+void led_set(led_t *led, uint8_t value);
+
 #define LED_BLINK_FOREVER    0xFFFF
 
 /**
@@ -48,6 +55,18 @@ void led_off(led_t *led);
  * @return     none
  */
 void led_blink(led_t *led, uint16_t on_time_ms, uint16_t off_time_ms,
+               uint16_t times);
+
+/**
+ * @brief      Start led blinking, will go to off when finished. Resets previous blinking settings.
+ * @param	     *led - Led to use
+ *             on_time_ms - Time led should be on in milliseconds
+ *             off_time_ms - Time led should be off in milliseconds
+ *             times - Times to repeat blink before returning to fixed state,
+ *                     0xFFFF - blink forever
+ * @return     none
+ */
+void led_blink_overwrite(led_t *led, uint16_t on_time_ms, uint16_t off_time_ms,
                uint16_t times);
 
 #endif
