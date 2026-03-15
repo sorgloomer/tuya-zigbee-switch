@@ -45,6 +45,10 @@
 #define ZCL_ATTR_BASIC_DEVICE_CONFIG        0xff00
 #define ZCL_ATTR_BASIC_STATUS_LED_STATE     0xff01
 
+// Identify Cluster
+
+#define ZCL_ATTR_IDENTIFY_IDENTIFY_TIME     0x0000
+
 // OnOff cluster
 
 #define ZCL_ATTR_ONOFF                    0x0000
@@ -107,6 +111,16 @@
 
 // Attr values
 
+// Identify Cluster
+
+#define ZCL_IDENTIFY_EFFECT_ID_BLINK                             0x00
+#define ZCL_IDENTIFY_EFFECT_ID_BREATHE                           0x01
+#define ZCL_IDENTIFY_EFFECT_ID_OKAY                              0x02
+#define ZCL_IDENTIFY_EFFECT_ID_CHANNEL_CHANGE                    0x0b
+#define ZCL_IDENTIFY_EFFECT_ID_FINISH_EFFECT                     0xfe
+#define ZCL_IDENTIFY_EFFECT_ID_STOP_EFFECT                       0xff
+#define ZCL_IDENTIFY_EFFECT_VARIANT_DEFAULT                      0x00
+
 // OnOff cluster
 
 #define ZCL_START_UP_ONOFF_SET_ONOFF_TO_OFF         0x00
@@ -139,7 +153,6 @@
 #define ZCL_ONOFF_CONFIGURATION_BINDED_MODE_LONG                       0x02
 #define ZCL_ONOFF_CONFIGURATION_BINDED_MODE_SHORT                      0x03
 
-
 // Level cluster
 
 #define ZCL_LEVEL_MOVE_UP      0x00
@@ -162,6 +175,13 @@
 #define ZCL_COVER_SWITCH_MODE_HYBRID         0x03
 
 // Commands
+
+// Identify Cluster
+
+#define ZCL_CMD_IDENTIFY_IDENTIFY                   0x00
+#define ZCL_CMD_IDENTIFY_IDENTIFY_QUERY             0x01
+#define ZCL_CMD_IDENTIFY_TRIGGER_EFFECT             0x40
+#define ZCL_CMD_IDENTIFY_IDENTIFY_QUERY_RESPONSE    0x00
 
 // OnOff Cluster
 

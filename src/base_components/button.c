@@ -13,7 +13,7 @@ static void _btn_fire_universal_event(button_t* self,
                                       btn_event_t event);
 
 void btn_init_before(button_t *self) {
-    memset(self, sizeof(button_t), 0);
+    memset(self, 0, sizeof(button_t));
     self->long_press_duration_ms  = 600;
     self->multi_press_duration_ms = 600;
 }

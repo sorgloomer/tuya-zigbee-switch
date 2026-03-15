@@ -2574,7 +2574,7 @@ REMOTE_HOBEIAN_TS0044:
   mcu_family: Telink
   mcu: TLSR8253F512AT32
   config_str: bgtzm4ny;TS0044-HOB;TC4uC3i;TD3uD4i;TD7uA0i;TB5uB6i;
-  alt_config_str: bgtzm4ny;TS0044-HOB;TC4u;TD3u;TD7u;TB5u;
+  alt_config_str: bgtzm4ny;TS0044-HOB;LC3i;LD4i;LA0i;LB6i;TC4u;TD3u;TD7u;TB5u;
   old_manufacturer_names: null
   old_zb_models: null
   stock_manufacturer_id: 4417
