@@ -26,21 +26,12 @@ typedef struct {
     zigbee_scene_button_cluster_settings settings;
 } zigbee_scene_button_cluster;
 
-/*
-            commandAction1: "initial_press",
-            commandAction2: "long_press",
-            commandAction3: "short_release",
-            commandAction4: "long_release",
-            commandAction6: "double_press",
-
-*/ 
 typedef enum {
-                                                // pressed | held | count | was_long
-    ZIGBEE_SOMRIG_COMMAND_INITIAL_PRESS = 0x01, //       1 |    0 |     1 |        -
-    ZIGBEE_SOMRIG_COMMAND_LONG_PRESS    = 0x02, //       1 |    1 |     1 |        -
-    ZIGBEE_SOMRIG_COMMAND_SHORT_RELEASE = 0x03, //       0 |    1 |     1 |        0
-    ZIGBEE_SOMRIG_COMMAND_LONG_RELEASE  = 0x04, //       0 |    0 |     1 |        1
-    ZIGBEE_SOMRIG_COMMAND_DOUBLE_PRESS  = 0x06, //       0 |    0 |     2 |        0
+    ZIGBEE_SOMRIG_COMMAND_INITIAL_PRESS = 0x01,
+    ZIGBEE_SOMRIG_COMMAND_LONG_PRESS    = 0x02,
+    ZIGBEE_SOMRIG_COMMAND_SHORT_RELEASE = 0x03,
+    ZIGBEE_SOMRIG_COMMAND_LONG_RELEASE  = 0x04,
+    ZIGBEE_SOMRIG_COMMAND_DOUBLE_PRESS  = 0x06,
 } zigbee_ikea_somrig_command_t;
 
 typedef enum {

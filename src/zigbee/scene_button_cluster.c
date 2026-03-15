@@ -52,9 +52,9 @@ void scene_button_cluster_add_to_endpoint(zigbee_scene_button_cluster* cluster, 
     endpoint->cluster_count++;
 }
 
-static void _send_event(
+static inline void _send_event(
     zigbee_scene_button_cluster* self,
-    uint8_t cluster_id,
+    uint16_t cluster_id,
     uint8_t command_id,
     uint8_t* payload,
     uint8_t payload_size
@@ -96,30 +96,13 @@ static void send_event_universal(
     uint8_t param_press_count
 ) {
     uint8_t payload[2] = { param_flags, param_press_count };
-    _send_event(self, ZCL_CLUSTER_IKEA_TRADFRI_SOMRIG_BUTTON, command_id, payload, 1);
+    _send_event(self, ZCL_CLUSTER_IKEA_TRADFRI_SOMRIG_BUTTON, command_id, payload, 2);
     printf(
         "Sent zigbee somrig command endpoint=%d command=%d payload=%02x%02x\r\n",
         (int)self->endpoint,
         (int)command_id,
         (int)param_flags,
         (int)param_press_count
-    );
-}
-
-static void send_event_u8u8(
-    zigbee_scene_button_cluster* self,
-    uint8_t cluster_id,
-    uint8_t command_id,
-    uint8_t command_param
-) {
-    uint8_t payload[1] = { command_param };
-    _send_event(self, cluster_id, command_id, payload, 1);
-    printf(
-        "Sent zigbee command endpoint=%d cluster=%d command=%d payload=%02x\r\n",
-        (int)self->endpoint,
-        (int)cluster_id,
-        (int)command_id,
-        (int)command_param
     );
 }
 
@@ -139,6 +122,9 @@ static void emulate_somrig_actions(zigbee_scene_button_cluster* self) {
     uint8_t previous_down_was_long = btn->long_pressed;
 
     if (timeout == 0 && pressed != 0) {
+        if (led_should_blink) {
+            led_blink_overwrite(self->led, 300, 300, 1);
+        }
         if (self->somrig_pending == 0) {
             send_event_somrig(self, ZIGBEE_SOMRIG_COMMAND_INITIAL_PRESS);
         }

@@ -1,12 +1,12 @@
 [
   {
-    "fileName": "tlc_switch-1.1.2-7b426474-forced.zigbee",
+    "fileName": "tlc_switch-1.1.2-3278939d-forced.zigbee",
     "fileVersion": 4294967295,
-    "fileSize": 146898,
-    "url": "https://github.com/sorgloomer/tuya-zigbee-switch/raw/refs/heads/remotes-dev/bin/end_device/REMOTE_HOBEIAN_TS0044_END_DEVICE/tlc_switch-1.1.2-7b426474-forced.zigbee",
+    "fileSize": 146722,
+    "url": "https://github.com/sorgloomer/tuya-zigbee-switch/raw/refs/heads/remotes-dev/bin/end_device/REMOTE_HOBEIAN_TS0044_END_DEVICE/tlc_switch-1.1.2-3278939d-forced.zigbee",
     "imageType": 43572,
     "manufacturerCode": 4417,
-    "sha512": "c28a0c05bd6ea1bc4ac6db2d9210d49d5342531a4fb34d50340da9f07baa4d9cca057158e80b493bee222f3d59d35adba3ad3a0f4f782071631beae90d704354",
+    "sha512": "88e1a4c1073a11ae272b86242043be992a9e90ea423265b9ddc0854240a3f68aec689fca008f9741e737fe5901c46033d02b17f36b94bb389b560d53ab0faba6",
     "otaHeaderString": "Telink OTA Image\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
     "manufacturerName": [
       "_TZ3000_bgtzm4ny",
