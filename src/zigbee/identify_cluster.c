@@ -29,8 +29,8 @@ void zigbee_identify_cluster_init(zigbee_identify_cluster* cluster, uint8_t endp
     cluster->endpoint = endpoint;
 }
 
-static void run_identify()  {
-    lightshow_start(10000);
+static void run_identify(uint32_t time_ms)  {
+    lightshow_start(time_ms);
 }
 
 static hal_zigbee_cmd_result_t identify_cluster_command_trampoline(
@@ -45,7 +45,8 @@ static hal_zigbee_cmd_result_t identify_cluster_command_trampoline(
         && cluster_id == ZCL_CLUSTER_IDENTIFY
         && command_id == ZCL_CMD_IDENTIFY_IDENTIFY
     ) {
-        run_identify();
+        uint16_t time_s = cmd_payload ? *(uint16_t*)cmd_payload : 10;
+        run_identify(time_s * 1000);
         return HAL_ZIGBEE_CMD_PROCESSED;
     }
     return HAL_ZIGBEE_CMD_SKIPPED;

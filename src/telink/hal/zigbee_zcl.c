@@ -68,6 +68,12 @@ static status_t cmd_callback(u8 endpoint, u16 clusterId, u8 cmdId,
     return(ZCL_STA_SUCCESS);
 }
 
+static status_t cmd_callback_identify(zclIncomingAddrInfo_t *pAddrInfo, u8 cmdId,
+                                    void *cmdPayload) {
+    return cmd_callback(pAddrInfo->dstEp, ZCL_CLUSTER_GEN_IDENTIFY, cmdId,
+                        cmdPayload);
+}
+
 static status_t cmd_callback_on_off(zclIncomingAddrInfo_t *pAddrInfo, u8 cmdId,
                                     void *cmdPayload) {
     return cmd_callback(pAddrInfo->dstEp, ZCL_CLUSTER_GEN_ON_OFF, cmdId,
@@ -87,6 +93,9 @@ static status_t cmd_callback_level_control(zclIncomingAddrInfo_t *pAddrInfo, u8 
 }
 
 static cluster_forAppCb_t get_cmd_callback_by_cluster_id(u16 cluster_id) {
+    if (cluster_id == ZCL_CLUSTER_GEN_IDENTIFY) {
+        return cmd_callback_identify;
+    }
     if (cluster_id == ZCL_CLUSTER_GEN_LEVEL_CONTROL) { // Level Control cluster
         return cmd_callback_level_control;
     }
