@@ -195,12 +195,20 @@ const romasku = {
                         validatePin(part.slice(3,5));
                     } else if (part[0] == 'L' || part[0] == 'R' || part[0] == 'I') {
                         validatePin(part.slice(1,3));
+                    } else if(part[0] == 'T') {
+                        if (part.length != 4 && part.length != 7) {
+                            throw new Error(`Invalid entry ${part}. Needs button pin and optional led pin. Example: 'TC4uC3i'.`);
+                        }
+                        validatePin(part.slice(1,3));
+                        if (part.length >= 7) {
+                            validatePin(part.slice(4,6));
+                        }
                     } else if(part[0] == 'M') {
                         ;
                     } else if(part[0] == 'i') {
                         ; // TODO: write validation
                     } else {
-                        throw new Error(`Invalid entry ${part}. Should start with one of B, R, L, S, I, X, C`);
+                        throw new Error(`Invalid entry ${part}. Should start with one of B, R, L, S, T, I, X, C`);
                     }
                 }
             },
